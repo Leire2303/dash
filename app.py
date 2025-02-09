@@ -1,11 +1,11 @@
 import dash
-from dash import dcc, html
+from dash import dcc, html, callback, Output, Input
 import dash_bootstrap_components as dbc
 
 # Crear la app con soporte multipágina
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MORPH], use_pages=True)
 
-# Estilos personalizados para un efecto moderno
+# Estilos personalizados para navbar
 NAVBAR_STYLE = {
     "position": "sticky",
     "top": "0",
@@ -27,20 +27,23 @@ NAV_LINK_STYLE = {
     "textDecoration": "none",
 }
 
-NAV_LINK_HOVER = {
-    "backgroundColor": "rgba(255, 255, 255, 0.2)",  # Efecto hover transparente
+ACTIVE_NAV_LINK_STYLE = {
+    **NAV_LINK_STYLE,
+    "backgroundColor": "white",
+    "color": "#255DB8",
 }
 
-# Navbar con efecto Glassmorphism
+# Navbar dinámico
 navbar = html.Div([
+    dcc.Location(id="url", refresh=False),  # Componente para obtener la URL actual
     dbc.Container([
         dbc.Row([
             dbc.Col(html.H3("🏭 CO₂ emissions around the world", style={"color": "white"}), width="auto"),
             dbc.Col(
                 dbc.Nav([
-                    dcc.Link("Home", href="/", style=NAV_LINK_STYLE, className="nav-item"),
-                    dcc.Link("Country Emissions", href="/emisiones-totales", style=NAV_LINK_STYLE, className="nav-item"),
-                    dcc.Link("Year Emissions", href="/emisiones-year", style=NAV_LINK_STYLE, className="nav-item"),
+                    dcc.Link("Home", href="/", id="home-link", style=NAV_LINK_STYLE, className="nav-item"),
+                    dcc.Link("Country Emissions", href="/emisiones-totales", id="country-link", style=NAV_LINK_STYLE, className="nav-item"),
+                    dcc.Link("Year Emissions", href="/emisiones-year", id="year-link", style=NAV_LINK_STYLE, className="nav-item"),
                 ], className="d-flex gap-3 justify-content-end"),
                 width=True
             )
@@ -48,11 +51,25 @@ navbar = html.Div([
     ], fluid=True)
 ], style=NAVBAR_STYLE)
 
-# Layout principal con navbar mejorado
+# Callback para actualizar los estilos de los enlaces de navegación según la URL actual
+@callback(
+    [Output("home-link", "style"),
+     Output("country-link", "style"),
+     Output("year-link", "style")],
+    [Input("url", "pathname")]
+)
+def update_nav_style(pathname):
+    return (
+        ACTIVE_NAV_LINK_STYLE if pathname == "/" else NAV_LINK_STYLE,
+        ACTIVE_NAV_LINK_STYLE if pathname == "/emisiones-totales" else NAV_LINK_STYLE,
+        ACTIVE_NAV_LINK_STYLE if pathname == "/emisiones-year" else NAV_LINK_STYLE,
+    )
+
+# Layout principal
 app.layout = dbc.Container([
     navbar,
     html.Br(),
-    dash.page_container  # Aquí se renderizan las páginas
+    dash.page_container  # Renderiza las páginas
 ], fluid=True)
 
 if __name__ == "__main__":
